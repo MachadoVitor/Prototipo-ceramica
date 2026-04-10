@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta inspirada no mockup — tons terrosos quentes */
+  --color-clay-50: #faf6f1;
+  --color-clay-100: #f3ebe0;
+  --color-clay-200: #e8d9c5;
+  --color-clay-300: #d4bd9c;
+  --color-clay-400: #c4a57a;
+  --color-clay-500: #b08d5e;
+  --color-clay-600: #96724a;
+  --color-clay-700: #7a5b3a;
+  --color-clay-800: #5e4530;
+  --color-clay-900: #4a3626;
+  --color-clay-950: #2d1f15;
+
+  --color-sand-50: #fefcf8;
+  --color-sand-100: #fdf8ef;
+  --color-sand-200: #f9efd9;
+
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-fade-in: fade-in 0.25s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: var(--color-clay-50);
+}
+
+body {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--color-clay-900);
+}
+
+/* Textura sutil de fundo - areia */
+.bg-sand-texture {
+  background-image:
+    radial-gradient(ellipse at 20% 80%, rgba(212, 189, 156, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(196, 165, 122, 0.1) 0%, transparent 50%),
+    linear-gradient(180deg, var(--color-sand-50) 0%, var(--color-clay-50) 100%);
+}
+
+/* Cards com estilo do mockup */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(93, 69, 48, 0.08), 0 1px 3px rgba(93, 69, 48, 0.06);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 6px rgba(93, 69, 48, 0.1);
+}
+
+/* Scrollbar minimalista */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-clay-300);
+  border-radius: 2px;
+}
+
+/* Esconde scrollbar horizontal dos filtros */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Safe area para iPhones com notch */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
