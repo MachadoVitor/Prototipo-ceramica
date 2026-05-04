@@ -9,14 +9,16 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// Service worker — registra apenas em produção
+// Service worker — registra apenas em produção, no path do build (BASE_URL)
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+      const swPath = `${import.meta.env.BASE_URL}sw.js`
+      navigator.serviceWorker
+        .register(swPath, { scope: import.meta.env.BASE_URL })
+        .catch(() => {})
     })
   } else {
-    // Em dev, desregistra qualquer SW antigo para evitar cache
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       registrations.forEach((r) => r.unregister())
     })

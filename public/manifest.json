@@ -2,16 +2,18 @@
   "name": "Clay+",
   "short_name": "Clay+",
   "description": "Controle de materiais e receitas para ceramistas",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#faf6f1",
   "theme_color": "#7a5b3a",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "./favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

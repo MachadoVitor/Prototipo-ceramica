@@ -1,25 +1,16 @@
 import { useEffect, useState, useRef } from 'react'
-import { Camera, Award, BookOpen, LogOut, Crown, Package, Fingerprint } from 'lucide-react'
+import { Camera, Award, BookOpen, Crown, Package, Pencil, Check } from 'lucide-react'
 import { useAuthStore } from '../stores/useAuthStore'
 import { useStore } from '../stores/useStore'
-import {
-  isBiometricPlatformAvailable,
-  isBiometricEnabledForEmail,
-  registerBiometric,
-  disableBiometric,
-} from '../lib/auth'
 import PageHeader from '../components/PageHeader'
-import Modal from '../components/Modal'
 import * as db from '../lib/db'
 
 export default function Profile() {
-  const { user, updateUser, logout } = useAuthStore()
+  const { user, updateUser } = useAuthStore()
   const { materials, recipes } = useStore()
   const [totalProduced, setTotalProduced] = useState(0)
-  const [confirmLogout, setConfirmLogout] = useState(false)
-  const [biometricAvailable, setBiometricAvailable] = useState(false)
-  const [biometricEnabled, setBiometricEnabled] = useState(false)
-  const [biometricLoading, setBiometricLoading] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameDraft, setNameDraft] = useState(user?.name || '')
   const fileInput = useRef(null)
 
   useEffect(() => {
@@ -27,15 +18,7 @@ export default function Profile() {
       const total = logs.reduce((sum, l) => sum + (l.quantity || 0), 0)
       setTotalProduced(total)
     })
-
-    // Verifica suporte a biometria
-    isBiometricPlatformAvailable().then((available) => {
-      setBiometricAvailable(available)
-      if (available && user?.email) {
-        setBiometricEnabled(isBiometricEnabledForEmail(user.email))
-      }
-    })
-  }, [user?.email])
+  }, [])
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0]
@@ -48,27 +31,15 @@ export default function Profile() {
     reader.readAsDataURL(file)
   }
 
-  const handleToggleBiometric = async () => {
-    if (!user?.email) return
-    setBiometricLoading(true)
-
-    try {
-      if (biometricEnabled) {
-        disableBiometric(user.email)
-        setBiometricEnabled(false)
-      } else {
-        await registerBiometric(user.email)
-        setBiometricEnabled(true)
-      }
-    } catch {
-      // Cancelou ou falhou
-    }
-
-    setBiometricLoading(false)
+  const startEditName = () => {
+    setNameDraft(user?.name || '')
+    setEditingName(true)
   }
 
-  const handleLogout = () => {
-    logout()
+  const saveName = () => {
+    const trimmed = nameDraft.trim()
+    if (trimmed) updateUser({ name: trimmed })
+    setEditingName(false)
   }
 
   if (!user) return null
@@ -113,8 +84,31 @@ export default function Profile() {
             />
           </div>
 
-          <h2 className="text-xl font-extrabold text-clay-900">{user.name}</h2>
-          <p className="text-sm text-clay-400 font-medium mt-0.5">{user.email}</p>
+          {editingName ? (
+            <div className="flex items-center gap-2 w-full max-w-xs">
+              <input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                autoFocus
+                className="flex-1 border-2 border-clay-200 rounded-xl px-3 py-2 text-base font-bold text-clay-900 focus:outline-none focus:border-clay-500"
+                onKeyDown={(e) => e.key === 'Enter' && saveName()}
+              />
+              <button
+                onClick={saveName}
+                className="w-10 h-10 bg-clay-700 rounded-xl flex items-center justify-center active:bg-clay-800"
+              >
+                <Check size={18} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={startEditName}
+              className="flex items-center gap-2 active:opacity-70"
+            >
+              <h2 className="text-xl font-extrabold text-clay-900">{user.name}</h2>
+              <Pencil size={14} className="text-clay-400" />
+            </button>
+          )}
 
           <div className={`mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
             isPremium
@@ -162,41 +156,9 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Biometria */}
-        {biometricAvailable && (
-          <div className="card p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-clay-100 rounded-xl flex items-center justify-center shrink-0">
-                  <Fingerprint size={20} className="text-clay-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-clay-800">Login por biometria</p>
-                  <p className="text-xs text-clay-400 font-medium">
-                    {biometricEnabled ? 'Ativado' : 'Desativado'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleToggleBiometric}
-                disabled={biometricLoading}
-                className={`w-12 h-7 rounded-full transition-colors relative ${
-                  biometricEnabled ? 'bg-green-500' : 'bg-clay-300'
-                } ${biometricLoading ? 'opacity-50' : ''}`}
-              >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-1 transition-transform ${
-                    biometricEnabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Membro desde */}
         <div className="card p-4 mb-4">
-          <p className="text-sm text-clay-400 font-medium">Membro desde</p>
+          <p className="text-sm text-clay-400 font-medium">Usando o Clay+ desde</p>
           <p className="text-base font-bold text-clay-800">
             {new Date(user.createdAt).toLocaleDateString('pt-BR', {
               day: '2-digit',
@@ -206,39 +168,10 @@ export default function Profile() {
           </p>
         </div>
 
-        {/* Logout */}
-        <button
-          onClick={() => setConfirmLogout(true)}
-          className="w-full card p-4 flex items-center justify-center gap-2 text-red-500 font-bold active:bg-red-50 transition-colors"
-        >
-          <LogOut size={20} />
-          Sair da conta
-        </button>
-      </div>
-
-      <Modal
-        open={confirmLogout}
-        onClose={() => setConfirmLogout(false)}
-        title="Sair da conta?"
-      >
-        <p className="text-clay-500 mb-6 text-base font-medium">
-          Seus dados ficarão salvos no dispositivo.
+        <p className="text-xs text-clay-400 font-medium text-center mt-6">
+          Seus dados ficam salvos neste dispositivo.
         </p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setConfirmLogout(false)}
-            className="flex-1 border-2 border-clay-200 text-clay-600 py-3.5 rounded-2xl text-base font-bold active:bg-clay-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex-1 bg-red-500 text-white py-3.5 rounded-2xl text-base font-bold active:bg-red-600 shadow-lg shadow-red-500/20"
-          >
-            Sair
-          </button>
-        </div>
-      </Modal>
+      </div>
     </div>
   )
 }

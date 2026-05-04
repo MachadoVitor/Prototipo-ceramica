@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { registerUser, verifyLogin, setLastLoggedInEmail } from '../lib/auth'
 
 const STORAGE_KEY = 'clayplus-auth'
 
@@ -19,55 +18,42 @@ function saveAuth(auth) {
   }
 }
 
+function defaultUser() {
+  return {
+    name: 'Meu Ateliê',
+    email: '',
+    photo: null,
+    plan: 'free',
+    createdAt: new Date().toISOString(),
+  }
+}
+
 export const useAuthStore = create((set) => ({
   user: loadAuth(),
 
-  // Cria conta no registry e seta sessão ativa
-  signup: async ({ name, email, password, plan }) => {
-    if (password) {
-      await registerUser({ name, email, password })
+  // Garante que existe um usuário local para o app abrir direto no menu
+  ensureLocalUser: () => {
+    const existing = loadAuth()
+    if (existing) {
+      set({ user: existing })
+      return
     }
-    setLastLoggedInEmail(email)
-    const user = {
-      name,
-      email: email.toLowerCase().trim(),
-      photo: null,
-      plan: plan || 'free',
-      createdAt: new Date().toISOString(),
-    }
+    const user = defaultUser()
     saveAuth(user)
     set({ user })
-  },
-
-  // Seta sessão sem registrar (usado pelo login e biometria)
-  setSession: (userData) => {
-    const user = {
-      name: userData.name,
-      email: userData.email.toLowerCase().trim(),
-      photo: loadAuth()?.photo || null,
-      plan: userData.plan || 'free',
-      createdAt: userData.createdAt || new Date().toISOString(),
-    }
-    setLastLoggedInEmail(userData.email)
-    saveAuth(user)
-    set({ user })
-  },
-
-  // Login com e-mail e senha
-  login: async (email, password) => {
-    const result = await verifyLogin(email, password)
-    return result
   },
 
   updateUser: (data) => {
-    const current = loadAuth()
+    const current = loadAuth() || defaultUser()
     const updated = { ...current, ...data }
     saveAuth(updated)
     set({ user: updated })
   },
 
-  logout: () => {
-    saveAuth(null)
-    set({ user: null })
+  // Reset apenas dos dados de perfil, mantém estoque/receitas no IndexedDB
+  resetProfile: () => {
+    const fresh = defaultUser()
+    saveAuth(fresh)
+    set({ user: fresh })
   },
 }))
